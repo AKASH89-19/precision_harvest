@@ -1,0 +1,564 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Precision Harvest - Smart Irrigation API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication
+  - name: farms
+    description: Farm management
+  - name: weather
+    description: Weather and irrigation logic
+  - name: analytics
+    description: Analytics and reporting
+  - name: notifications
+    description: Notification settings
+
+paths:
+  /auth/signup:
+    post:
+      operationId: signup
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignupBody"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "409":
+          description: Email already in use
+
+  /auth/signin:
+    post:
+      operationId: signin
+      tags: [auth]
+      summary: Sign in an existing user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SigninBody"
+      responses:
+        "200":
+          description: Signed in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Unauthorized
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /farms:
+    get:
+      operationId: listFarms
+      tags: [farms]
+      summary: List all farms
+      responses:
+        "200":
+          description: List of farms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Farm"
+    post:
+      operationId: createFarm
+      tags: [farms]
+      summary: Create a new farm
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FarmInput"
+      responses:
+        "201":
+          description: Created farm
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Farm"
+
+  /farms/{id}:
+    get:
+      operationId: getFarm
+      tags: [farms]
+      summary: Get a farm by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Farm details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Farm"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateFarm
+      tags: [farms]
+      summary: Update a farm
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FarmUpdate"
+      responses:
+        "200":
+          description: Updated farm
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Farm"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteFarm
+      tags: [farms]
+      summary: Delete a farm
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /farms/{id}/pump:
+    patch:
+      operationId: togglePump
+      tags: [farms]
+      summary: Toggle pump status manually
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PumpToggle"
+      responses:
+        "200":
+          description: Updated farm with new pump status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Farm"
+
+  /weather/{farmId}:
+    get:
+      operationId: getWeather
+      tags: [weather]
+      summary: Get current weather and irrigation recommendation for a farm
+      parameters:
+        - name: farmId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Weather data with irrigation recommendation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeatherData"
+        "404":
+          description: Farm not found
+
+  /weather/{farmId}/forecast:
+    get:
+      operationId: getWeatherForecast
+      tags: [weather]
+      summary: Get 5-day / 3-hour weather forecast for a farm
+      parameters:
+        - name: farmId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 5-day forecast data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForecastData"
+
+  /weather/{farmId}/automate:
+    post:
+      operationId: runIrrigationAutomation
+      tags: [weather]
+      summary: Run irrigation automation logic based on current weather
+      parameters:
+        - name: farmId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Automation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomationResult"
+
+  /analytics/{farmId}:
+    get:
+      operationId: getAnalytics
+      tags: [analytics]
+      summary: Get analytics summary for a farm
+      parameters:
+        - name: farmId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Analytics data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Analytics"
+
+  /notifications/test:
+    post:
+      operationId: sendTestNotification
+      tags: [notifications]
+      summary: Send a test notification email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationTest"
+      responses:
+        "200":
+          description: Notification sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationResult"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+
+    Farm:
+      type: object
+      required: [id, name, location, cropType, pumpStatus, currentMoisture, waterSavedLiters, createdAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        location:
+          type: string
+        cropType:
+          type: string
+        pumpStatus:
+          type: string
+          enum: [ON, OFF, PAUSED_BY_AI]
+        currentMoisture:
+          type: number
+        waterSavedLiters:
+          type: number
+        notificationEmail:
+          type: ["string", "null"]
+        notificationPhone:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    FarmInput:
+      type: object
+      required: [name, location, cropType]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        location:
+          type: string
+          minLength: 1
+        cropType:
+          type: string
+          minLength: 1
+        notificationEmail:
+          type: string
+        notificationPhone:
+          type: string
+
+    FarmUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        location:
+          type: string
+          minLength: 1
+        cropType:
+          type: string
+          minLength: 1
+        notificationEmail:
+          type: string
+        notificationPhone:
+          type: string
+
+    PumpToggle:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ON, OFF]
+
+    WeatherData:
+      type: object
+      required: [temperature, humidity, rainProbability, description, icon, windSpeed, waterScore, recommendation, pumpDurationMultiplier, shouldIrrigate, city]
+      properties:
+        temperature:
+          type: number
+        humidity:
+          type: number
+        rainProbability:
+          type: number
+        description:
+          type: string
+        icon:
+          type: string
+        windSpeed:
+          type: number
+        waterScore:
+          type: number
+        recommendation:
+          type: string
+        pumpDurationMultiplier:
+          type: number
+        shouldIrrigate:
+          type: boolean
+        city:
+          type: string
+
+    ForecastItem:
+      type: object
+      required: [timestamp, temperature, rainProbability, humidity, description, icon]
+      properties:
+        timestamp:
+          type: string
+        temperature:
+          type: number
+        rainProbability:
+          type: number
+        humidity:
+          type: number
+        description:
+          type: string
+        icon:
+          type: string
+
+    ForecastData:
+      type: object
+      required: [city, items]
+      properties:
+        city:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ForecastItem"
+
+    AutomationResult:
+      type: object
+      required: [farmId, action, reason, waterSavedLiters, notificationSent]
+      properties:
+        farmId:
+          type: string
+        action:
+          type: string
+        reason:
+          type: string
+        waterSavedLiters:
+          type: number
+        notificationSent:
+          type: boolean
+
+    Analytics:
+      type: object
+      required: [farmId, totalWaterSavedLiters, moneySaved, cropHealthIndex, irrigationEvents, skippedEvents, weeklyUsage]
+      properties:
+        farmId:
+          type: string
+        totalWaterSavedLiters:
+          type: number
+        moneySaved:
+          type: number
+        cropHealthIndex:
+          type: number
+        irrigationEvents:
+          type: number
+        skippedEvents:
+          type: number
+        weeklyUsage:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeeklyUsageItem"
+
+    WeeklyUsageItem:
+      type: object
+      required: [day, traditional, optimized, rainfall]
+      properties:
+        day:
+          type: string
+        traditional:
+          type: number
+        optimized:
+          type: number
+        rainfall:
+          type: number
+
+    NotificationTest:
+      type: object
+      required: [email, farmName, message]
+      properties:
+        email:
+          type: string
+        farmName:
+          type: string
+        message:
+          type: string
+
+    NotificationResult:
+      type: object
+      required: [sent, method]
+      properties:
+        sent:
+          type: boolean
+        method:
+          type: string
+        error:
+          type: ["string", "null"]
+
+    SignupBody:
+      type: object
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        farmLocation:
+          type: string
+
+    SigninBody:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    AuthUser:
+      type: object
+      required: [id, name, email]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        farmLocation:
+          type: ["string", "null"]
+
+    AuthResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/AuthUser"
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

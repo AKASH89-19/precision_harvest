@@ -1,0 +1,14 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "SzT6A0ETl_Plau11UFLsW"
+uri = "file://precision-harvest.tar.gz"
+type = "unspecified"
+title = "precision-harvest.tar.gz"
+
+[[outputs]]
+id = "GVE_onSFVUD-SJescPmws"
+uri = "file://precision-harvest-github.tar.gz"
+type = "unspecified"
+title = "precision-harvest-github.tar.gz"

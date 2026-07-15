@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+.cache/
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Secrets - NEVER commit
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Replit-specific
+.replit
+.replit-artifact/
+.local/
+replit.nix
+
+# Archives
+*.tar.gz
+*.zip
