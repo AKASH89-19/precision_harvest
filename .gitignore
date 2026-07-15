@@ -33,3 +33,4 @@ replit.nix
 # Archives
 *.tar.gz
 *.zip
+.vercel
